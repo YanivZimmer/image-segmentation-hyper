@@ -11,27 +11,32 @@ from untils.loss import MixedLoss
 from untils.test import evaluate, metric
 from untils.train import EarlyStopping, train_one_epoch
 
-EPOCHS = 1
+EPOCHS = 25
 TRAIN_MODEL = True
 EVALUATE = True
-LEARNING_RATE = 0.001
-criterion = MixedLoss(10.0, 2.0)
-es = EarlyStopping(patience=10, mode='max')
+#LEARNING_RATE = 0.00001 acc 59%
+LEARNING_RATE = 0.0000025
+criterion = MixedLoss(0, 2.0)
+es = EarlyStopping(patience=2, mode='max')
+N_CLASS=11
+#SIZE = 572
+model = UNet(25,11)
 
-SIZE = 572
-model = UNet(25,1)
+train_data = '/media/orange/i_want_to_add_to/Datasets/HS_Drive_v2/Image_dataset/cubes_fl32'
+#'/home/orange/datasets/hsi_drive_v2/train/data'
+train_labels = '/media/orange/i_want_to_add_to/Datasets/HS_Drive_v2/Image_dataset/labels'
+#'/home/orange/datasets/hsi_drive_v2/train/labels'
+val_data = '/media/orange/i_want_to_add_to/Datasets/HS_Drive_v2/Image_dataset/cubes_fl32'
+#'/home/orange/datasets/hsi_drive_v2/validation/data'
+val_labels = '/media/orange/i_want_to_add_to/Datasets/HS_Drive_v2/Image_dataset/labels'
+#'/home/orange/datasets/hsi_drive_v2/validation/labels'
 
-train_data = '/home/orange/datasets/hsi_drive_v2/train/data'
-train_labels = '/home/orange/datasets/hsi_drive_v2/train/labels'
-val_data = '/home/orange/datasets/hsi_drive_v2/validation/data'
-val_labels = '/home/orange/datasets/hsi_drive_v2/validation/labels'
-
-train_dataset = SegmentationDataset(image_dir=train_data, mask_dir=train_labels,
+train_dataset = SegmentationDataset(image_dir=train_data, n_class=N_CLASS, mask_dir=train_labels,
                                        mode="Hyper", data_key='cube',
-                                       transform=torchvision.transforms.Resize((SIZE, SIZE)))
-val_dataset = SegmentationDataset(image_dir=val_data, mask_dir=val_labels,
+                                       transform=None)#torchvision.transforms.Resize((SIZE, SIZE)))
+val_dataset = SegmentationDataset(image_dir=val_data, n_class=N_CLASS, mask_dir=val_labels,
                                      mode="Hyper", data_key='cube',
-                                     transform=torchvision.transforms.Resize((SIZE, SIZE)))
+                                     transform=None)#torchvision.transforms.Resize((SIZE, SIZE)))
 
 train_dataloader = DataLoader(train_dataset, batch_size=1, shuffle=True)
 val_dataloader = DataLoader(val_dataset, batch_size=1, shuffle=True)

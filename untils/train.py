@@ -10,7 +10,7 @@ import torch.nn.functional as F
 import torch
 from tqdm import tqdm
 
-from untils.loss import AverageMeter
+from untils.average_meter import AverageMeter
 
 
 class EarlyStopping:

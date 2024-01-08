@@ -11,17 +11,18 @@ def png_to_array(path: str) -> np.ndarray:
     return arr
 
 class SegmentationDataset(Dataset):
-    def __init__(self, image_dir, mask_dir,mode,data_key,transform=None):
+    def __init__(self, image_dir, mask_dir,n_class,mode,data_key,transform=None):
         self.image_dir = image_dir
         self.mask_dir = mask_dir
+        self.n_class = n_class
         self.transform = transform
         self.mode = mode
         self.data_key= data_key
         self.images = sorted(os.listdir(image_dir))
-        self.masks = sorted(os.listdir(mask_dir))
+        self.masks = sorted(os.listdir(mask_dir))[:10]
         self.to_tensor = transforms.ToTensor()
     def __len__(self):
-        return len(self.images)
+        return len(self.masks)
 
     def file_to_mat(self, filename: str, key: str) -> np.ndarray:
         if filename.endswith("png"):
@@ -32,7 +33,20 @@ class SegmentationDataset(Dataset):
         return torch.from_numpy(self.file_to_mat(path,self.data_key))#[:3,:,:]#.unsqueeze(0)
 
     def image_opener(self, path):
-        return self.to_tensor(Image.open(path).convert('RGB'))
+        image = self.to_tensor(Image.open(path).convert('RGB'))
+        if self.transform:
+            image = self.transform(image)
+        return image
+
+    def mask_to_categorcial(self, mask):
+        return torch.nn.functional.one_hot(mask.to(torch.int64),self.n_class)
+    def mask_opener(self, path):
+        mask = torch.from_numpy(np.array(Image.open(path)))
+        if self.transform:
+            mask = self.transform(mask)
+        return mask.to(torch.int64)#self.mask_to_categorcial(mask)
+
+
 
     def get_data_name(self,lablefile):
         base_name = os.path.splitext(os.path.basename(lablefile))[0]
@@ -43,8 +57,8 @@ class SegmentationDataset(Dataset):
     def __getitem__(self, idx):
         mask_name = os.path.join(self.mask_dir, self.masks[idx])
         img_name = os.path.join(self.image_dir, self.get_data_name(self.masks[idx]))
-
-        mask = self.to_tensor(Image.open(mask_name).convert('L'))#.unsqueeze(0)  # L mode for single-channel masks
+        mask = self.mask_opener(mask_name)
+        #mask = self.to_tensor(Image.open(mask_name).convert('L'))#.unsqueeze(0)  # L mode for single-channel masks
         if self.mode =="RGB":
             image = self.image_opener(img_name)
         else:     

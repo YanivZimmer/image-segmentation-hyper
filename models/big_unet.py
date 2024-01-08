@@ -106,3 +106,6 @@ class UNet(nn.Module):
         x = self.up4(x, x1)
         logits = self.outc(x)
         return logits
+        # process = logits.permute(0, 2, 3, 1)
+        # output = F.softmax(process, dim=-1)
+        # return output
