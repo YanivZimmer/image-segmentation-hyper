@@ -20,7 +20,7 @@ criterion = MixedLoss(0, 2.0)
 es = EarlyStopping(patience=2, mode='max')
 N_CLASS=11
 #SIZE = 572
-model = UNet(25,11)
+model = UNet(25,11,band_selection=True)
 
 train_data = '/media/orange/i_want_to_add_to/Datasets/HS_Drive_v2/Image_dataset/cubes_fl32'
 #'/home/orange/datasets/hsi_drive_v2/train/data'

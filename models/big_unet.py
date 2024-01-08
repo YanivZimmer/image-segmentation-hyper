@@ -4,6 +4,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from models.ehbs import EHBSFeatureSelector
+
 
 class DoubleConv(nn.Module):
     """(convolution => [BN] => ReLU) * 2"""
@@ -76,8 +78,12 @@ class OutConv(nn.Module):
     def forward(self, x):
         return self.conv(x)
 class UNet(nn.Module):
-    def __init__(self, n_channels, n_classes, bilinear=False):
+    def __init__(self, n_channels, n_classes, band_selection=False,bilinear=False):
         super(UNet, self).__init__()
+        self.band_selection = band_selection
+        if band_selection:
+            self.ehbs = EHBSFeatureSelector(input_dim=n_channels,sigma=0.5,device="cuda")
+
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.bilinear = bilinear
@@ -95,6 +101,7 @@ class UNet(nn.Module):
         self.outc = (OutConv(64, n_classes))
 
     def forward(self, x):
+        x = self.ehbs(x)
         x1 = self.inc(x)
         x2 = self.down1(x1)
         x3 = self.down2(x2)
