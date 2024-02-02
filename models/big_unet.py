@@ -101,7 +101,8 @@ class UNet(nn.Module):
         self.outc = (OutConv(64, n_classes))
 
     def forward(self, x):
-        x = self.ehbs(x)
+        if self.band_selection:
+            x = self.ehbs(x)
         x1 = self.inc(x)
         x2 = self.down1(x1)
         x3 = self.down2(x2)

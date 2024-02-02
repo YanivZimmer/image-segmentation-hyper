@@ -19,7 +19,7 @@ class SegmentationDataset(Dataset):
         self.mode = mode
         self.data_key= data_key
         self.images = sorted(os.listdir(image_dir))
-        self.masks = sorted(os.listdir(mask_dir))[:10]
+        self.masks = sorted(os.listdir(mask_dir))[:100]
         self.to_tensor = transforms.ToTensor()
     def __len__(self):
         return len(self.masks)

@@ -38,6 +38,7 @@ class EHBSFeatureSelector(nn.Module):
         return x
 
     def forward(self, x):
+        print(self.get_gates("prob"))
         discount = 1
         z = self.mu + discount*self.sigma * self.noise.normal_() * self.training
         stochastic_gate = self.hard_sigmoid(z)

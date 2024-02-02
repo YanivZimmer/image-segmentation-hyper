@@ -63,7 +63,7 @@ class EarlyStopping:
         self.val_score = epoch_score
 
 def train_one_epoch(train_loader, model, optimizer, loss_fn, accumulation_steps=1, device='cuda'):
-    lam = 0.3
+    lam = 1
     losses = AverageMeter()
     model = model.to(device)
     model.train()

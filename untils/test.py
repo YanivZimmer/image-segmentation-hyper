@@ -4,6 +4,7 @@ from tqdm import tqdm
 from untils.average_meter import AverageMeter
 #from Losses import ComboLoss, dice_metric
 from untils.loss import dice_coefficient
+from untils.metrics import IouCalculator
 
 
 def acc_metric(input, target):
@@ -61,7 +62,9 @@ def dice_ignore_label(pred, target, ignore_label=0):
     return dice
 
 def evaluate(valid_loader, model, device='cuda', metric=None):#=dice_metric):
+    iou_calculator = IouCalculator()
     losses = AverageMeter()
+    IoU = AverageMeter()
     model = model.to(device)
     model.eval()
     tk0 = tqdm(valid_loader, total=len(valid_loader))
@@ -72,9 +75,11 @@ def evaluate(valid_loader, model, device='cuda', metric=None):#=dice_metric):
             out = model(data['image'])
             #my_dice = dice_coefficient(out, data['mask'])
             acc = my_acc(out, data['mask'])
+            iou = iou_calculator.calculate_iou(out, data['mask'])
+            IoU.update(iou, valid_loader.batch_size)
             losses.update(acc, valid_loader.batch_size)
             #out   = torch.sigmoid(out)
             #dice  = metric(out, data['mask']).cpu()
             #losses.update(dice.mean().item(), valid_loader.batch_size)
-            tk0.set_postfix(dice_score=losses.avg)
-    return losses.avg
+            tk0.set_postfix(acc_score=losses.avg,iou_score=IoU.avg)
+    return losses.avg,IoU.avg

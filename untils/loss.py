@@ -4,6 +4,8 @@ from collections import defaultdict
 import torchvision
 import torch.nn.functional as F
 import torch
+from torchmetrics import Dice
+
 IGNORE_LABEL = 0
 def dice_loss_old(input, target):
     #input = torch.sigmoid(input)
@@ -18,7 +20,11 @@ def dice_loss(input, target, ignore_label=0):
     dice_loss = 1.0 - dice_coefficient(input,target,ignore_label)
     return dice_loss
 
-def dice_coefficient(input, target, ignore_label=0):
+def dice_coefficient(preds, target, ignore_label=0):
+    dice = Dice(average='micro',ignore_label=ignore_label)
+    res = dice(preds, target)
+    return res
+def dice_coefficient_old(input, target, ignore_label=0):
     smooth = 1.0
     dims = input.size()
     # Calculate the product of all dimensions except the last one
@@ -55,19 +61,20 @@ class FocalLoss(nn.Module):
         return loss.mean()
 
 class MixedLoss(nn.Module):
-    def __init__(self, alpha, gamma):
+    def __init__(self, alpha, gamma,device="cuda"):
         super().__init__()
         self.alpha = alpha
         self.focal = FocalLoss(gamma)
         self.cross_entropy = nn.CrossEntropyLoss(ignore_index=0)
-
+        self.dice_score = Dice(average='micro',ignore_index=0).to(device)
         # Calculate the loss
-
+    def dice_loss(self,input,target):
+        return 1-self.dice_score(input,target)
     def forward(self, input, target):
         #loss = self.alpha*self.focal(input, target) - torch.log(dice_loss(input, target))
         #return loss.mean()
         #return dice_loss(input, target)
-        loss = self.cross_entropy(input, target)
+        loss = self.cross_entropy(input, target)+self.dice_loss(input,target)
         return loss
 
 
