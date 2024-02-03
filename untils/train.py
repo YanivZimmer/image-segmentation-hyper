@@ -62,7 +62,10 @@ class EarlyStopping:
             torch.save(model.state_dict(), model_path)
         self.val_score = epoch_score
 
-def train_one_epoch(train_loader, model, optimizer, loss_fn, accumulation_steps=1, device='cuda'):
+
+def train_one_epoch(
+    train_loader, model, optimizer, loss_fn, accumulation_steps=1, device="cuda"
+):
     lam = 1
     losses = AverageMeter()
     model = model.to(device)
@@ -75,16 +78,16 @@ def train_one_epoch(train_loader, model, optimizer, loss_fn, accumulation_steps=
             data[key] = value.to(device)
         if accumulation_steps == 1 and b_idx == 0:
             optimizer.zero_grad()
-        out = model(data['image'])
-        loss = loss_fn(out, data['mask'])
+        out = model(data["image"])
+        loss = loss_fn(out, data["mask"])
         if model.band_selection:
-           regu = lam*model.ehbs.regularizer()
-           loss += regu
+            regu = lam * model.ehbs.regularizer()
+            loss += regu
         with torch.set_grad_enabled(True):
             loss.backward()
             if (b_idx + 1) % accumulation_steps == 0:
                 optimizer.step()
                 optimizer.zero_grad()
         losses.update(loss.item(), train_loader.batch_size)
-        tk0.set_postfix(loss=losses.avg, learning_rate=optimizer.param_groups[0]['lr'])
+        tk0.set_postfix(loss=losses.avg, learning_rate=optimizer.param_groups[0]["lr"])
     return losses.avg

@@ -17,7 +17,7 @@ class EHBSFeatureSelector(nn.Module):
             ),
             requires_grad=True,
         )
-        self.noise = torch.randn(self.mu.size(),device=device)
+        self.noise = torch.randn(self.mu.size(), device=device)
         self.sigma = sigma
 
     def apply_ndim_mask(self, mask_1d: torch.Tensor, x: torch.Tensor):
@@ -40,13 +40,13 @@ class EHBSFeatureSelector(nn.Module):
     def forward(self, x):
         print(self.get_gates("prob"))
         discount = 1
-        z = self.mu + discount*self.sigma * self.noise.normal_() * self.training
+        z = self.mu + discount * self.sigma * self.noise.normal_() * self.training
         stochastic_gate = self.hard_sigmoid(z)
         if len(x.shape) == 2:
             return x * stochastic_gate
         temp = torch.ones(stochastic_gate.shape)
         temp[1] = 0
-        y=torch.Tensor(x)
+        y = torch.Tensor(x)
         x = x.squeeze()
         x = torch.transpose(x, 0, -1)
         x = x * stochastic_gate
@@ -84,4 +84,3 @@ class EHBSFeatureSelector(nn.Module):
             )
         else:
             raise NotImplementedError()
-
