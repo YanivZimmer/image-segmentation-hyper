@@ -16,7 +16,8 @@ TRAIN_MODEL = True
 EVALUATE = True
 #LEARNING_RATE = 0.00001 acc 59%
 #LEARNING_RATE = 0.0000025
-LEARNING_RATE = 0.000005
+#LEARNING_RATE = 0.000005
+LEARNING_RATE = 0.000015
 criterion = MixedLoss(0, 2.0,"cuda")
 es = EarlyStopping(patience=2, mode='max')
 N_CLASS=11
@@ -45,7 +46,7 @@ val_dataloader = DataLoader(val_dataset, batch_size=1, shuffle=True)
 if TRAIN_MODEL:
     optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
     scheduler = torch.optim.lr_scheduler.MultiStepLR(
-        optimizer, milestones=[ 15 ,25], gamma=0.75)
+        optimizer, milestones=[ 15,55,105], gamma=0.75)
     for epoch in range(EPOCHS):
         loss = train_one_epoch(train_dataloader, model, optimizer, criterion)
         acc,iou = evaluate(val_dataloader, model, metric=metric)
