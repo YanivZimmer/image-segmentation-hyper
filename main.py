@@ -13,10 +13,11 @@ from untils.loss import MixedLoss
 from untils.test import evaluate, metric
 from untils.train import EarlyStopping, train_one_epoch
 
-EPOCHS = 2
+EPOCHS = 100
 TRAIN_MODEL = True
 EVALUATE = True
-N_CLASS = 11
+#N_CLASS = 11
+N_CLASS = 3
 
 # LEARNING_RATE = 0.00001 acc 59%
 # LEARNING_RATE = 0.0000025
@@ -28,16 +29,18 @@ def main():
     criterion = MixedLoss(0, 2.0, "cuda")
     es = EarlyStopping(patience=2, mode="max")
     # SIZE = 572
-    model = UNet(25, 11, band_selection=False)
+    model = UNet(25, N_CLASS, band_selection=False)
     ds = DataSplit()
     test, val, train = ds.get_files("./assets")
 
-    data_path = (
-        "/media/orange/i_want_to_add_to/Datasets/HS_Drive_v2/Image_dataset/cubes_fl32"
-    )
-    labels_path = (
-        "/media/orange/i_want_to_add_to/Datasets/HS_Drive_v2/Image_dataset/labels"
-    )
+    data_path = "/cortex/data/images/hyperspectral/HS_Drive_v2/Image_dataset/cubes_fl32"
+    #"/home/dsi/yanivz/data/HS_Drive_v2/Image_dataset/cubes_fl32"
+        #"/media/orange/i_want_to_add_to/Datasets/HS_Drive_v2/Image_dataset/cubes_fl32"
+    
+    labels_path = "/cortex/data/images/hyperspectral/HS_Drive_v2/Image_dataset/labels"
+        #"/home/dsi/yanivz/data/HS_Drive_v2/Image_dataset/labels"
+        #"/media/orange/i_want_to_add_to/Datasets/HS_Drive_v2/Image_dataset/labels"
+    
 
     train_dataset = SegmentationDataset(
         image_dir=data_path,
@@ -73,7 +76,7 @@ def main():
     if TRAIN_MODEL:
         optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
         scheduler = torch.optim.lr_scheduler.MultiStepLR(
-            optimizer, milestones=[15, 55, 105], gamma=0.75
+            optimizer, milestones=[3,5,15,35, 55, 105], gamma=0.75
         )
         for epoch in range(EPOCHS):
             loss = train_one_epoch(train_dataloader, model, optimizer, criterion)
