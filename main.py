@@ -33,11 +33,11 @@ def main():
     ds = DataSplit()
     test, val, train = ds.get_files("./assets")
 
-    data_path = "/cortex/data/images/hyperspectral/HS_Drive_v2/Image_dataset/cubes_fl32"
+    data_path = "/media/orange/i_want_to_add_to/Datasets/HS_Drive_v2/Image_dataset/cubes_fl32"#/cortex/data/images/hyperspectral/HS_Drive_v2/Image_dataset/cubes_fl32"
     #"/home/dsi/yanivz/data/HS_Drive_v2/Image_dataset/cubes_fl32"
         #"/media/orange/i_want_to_add_to/Datasets/HS_Drive_v2/Image_dataset/cubes_fl32"
     
-    labels_path = "/cortex/data/images/hyperspectral/HS_Drive_v2/Image_dataset/labels"
+    labels_path = "/media/orange/i_want_to_add_to/Datasets/HS_Drive_v2/Image_dataset/labels"#"/cortex/data/images/hyperspectral/HS_Drive_v2/Image_dataset/labels"
         #"/home/dsi/yanivz/data/HS_Drive_v2/Image_dataset/labels"
         #"/media/orange/i_want_to_add_to/Datasets/HS_Drive_v2/Image_dataset/labels"
     

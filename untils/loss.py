@@ -6,6 +6,8 @@ import torch.nn.functional as F
 import torch
 from torchmetrics import Dice
 
+from untils.metrics import IouCalculator
+
 IGNORE_LABEL = 0
 
 
@@ -78,33 +80,6 @@ class FocalLoss(nn.Module):
         return loss.mean()
 
 
-class IoULoss(nn.Module):
-    def __init__(self, weight=None, size_average=True):
-        super(IoULoss, self).__init__()
-
-    def forward(self, inputs, targets, smooth=1):
-        # comment out if your model contains a sigmoid or equivalent activation layer
-        #inputs = F.sigmoid(inputs)
-        inputs = F.sigmoid(inputs)
-        # flatten label and prediction tensors
-        inputs = inputs.view(-1)
-        targets = targets.view(-1)
-
-        non_zero_mask = targets > 0
-        inputs = inputs[non_zero_mask]
-        targets = targets[non_zero_mask]
-
-        # intersection is equivalent to True Positive count
-        # union is the mutually inclusive area of all labels & predictions
-        intersection = (inputs * targets).sum()
-        total = (inputs + targets).sum()
-        union = total - intersection
-
-        IoU = (intersection + smooth) / (union + smooth)
-
-        return 1 - IoU
-
-
 class MixedLoss(nn.Module):
     def __init__(self, alpha, gamma, device="cuda"):
         super().__init__()
@@ -112,7 +87,7 @@ class MixedLoss(nn.Module):
         self.focal = FocalLoss(gamma)
         self.cross_entropy = nn.CrossEntropyLoss(ignore_index=0)
         self.dice_score = Dice(average="micro", ignore_index=0).to(device)
-        self.iou_loss = IoULoss()
+        self.iou_calculator = IouCalculator()
         # Calculate the loss
 
     def dice_loss(self, input, target):
@@ -122,5 +97,6 @@ class MixedLoss(nn.Module):
         # loss = self.alpha*self.focal(input, target) - torch.log(dice_loss(input, target))
         # return loss.mean()
         # return dice_loss(input, target)
+
         loss = self.cross_entropy(input, target)#-torch.log(self.dice_score(input, target))
         return loss

@@ -15,6 +15,7 @@ class IouCalculator:
         ).to(device)
 
     def calculate_iou(self, pred_mask, gt_mask, ignore=(0,)):
+        pred_mask=torch.argmax(pred_mask,dim=1)
         res = self.metric(pred_mask, gt_mask)
         return res
 

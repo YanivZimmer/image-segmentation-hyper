@@ -7,6 +7,7 @@ from torch.utils.data import Dataset
 from torchvision import transforms
 from PIL import Image
 import numpy as np
+import torchio as tio
 
 
 def png_to_array(path: str) -> np.ndarray:
@@ -37,6 +38,7 @@ class SegmentationDataset(Dataset):
         self.masks = sorted(os.listdir(mask_dir))
         self.masks = list(self.samples_names.intersection(self.masks))
         self.to_tensor = transforms.ToTensor()
+
 
     def __len__(self):
         return len(self.masks)
@@ -73,11 +75,20 @@ class SegmentationDataset(Dataset):
             raise AttributeError(f"no data for {base_name}")
         return data_files[0]
     def mask_to_other(self,tensor):
-      preset_dict={1:1,2:1,3:2,4:2,5:2,6:2,7:2,8:2,9:2,10:2}
+      preset_dict={0:0,1:1,2:1,3:2,4:2,5:2,6:2,7:2,8:2,9:2,10:2}
       mapped_values = torch.tensor([preset_dict.get(val.item(), 0) for val in tensor.flatten()])
       # Reshape the mapped values tensor to match the original tensor shape
       mapped_tensor = mapped_values.reshape(tensor.shape)
       return mapped_tensor
+
+    def mask_to_other_t(self,image):
+        #The transform will not be correctly inverted if one of the values in remapping is also in the input image:
+        remapping = {0:1000,1:1001,2:1001,3:1002,4:1002,5:1002,6:1002,7:1002,8:1002,9:1002,10:1002}
+        transform = tio.RemapLabels(remapping)
+        mapped_image = transform(image.unsqueeze(0).unsqueeze(-1)).squeeze()
+        mapped_image -= 1000
+        return mapped_image
+
 
     def __getitem__(self, idx):
         mask_name = os.path.join(self.mask_dir, self.masks[idx])
