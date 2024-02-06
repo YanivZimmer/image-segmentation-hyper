@@ -13,7 +13,7 @@ from untils.loss import MixedLoss
 from untils.test import evaluate, metric
 from untils.train import EarlyStopping, train_one_epoch
 
-EPOCHS = 100
+EPOCHS = 25
 TRAIN_MODEL = True
 EVALUATE = True
 #N_CLASS = 11
@@ -22,7 +22,7 @@ N_CLASS = 3
 # LEARNING_RATE = 0.00001 acc 59%
 # LEARNING_RATE = 0.0000025
 # LEARNING_RATE = 0.000005
-LEARNING_RATE = 0.000015
+LEARNING_RATE = 0.000005
 
 
 def main():
@@ -33,11 +33,11 @@ def main():
     ds = DataSplit()
     test, val, train = ds.get_files("./assets")
 
-    data_path = "/media/orange/i_want_to_add_to/Datasets/HS_Drive_v2/Image_dataset/cubes_fl32"#/cortex/data/images/hyperspectral/HS_Drive_v2/Image_dataset/cubes_fl32"
+    data_path = "/cortex/data/images/hyperspectral/HS_Drive_v2/Image_dataset/cubes_fl32"
     #"/home/dsi/yanivz/data/HS_Drive_v2/Image_dataset/cubes_fl32"
         #"/media/orange/i_want_to_add_to/Datasets/HS_Drive_v2/Image_dataset/cubes_fl32"
     
-    labels_path = "/media/orange/i_want_to_add_to/Datasets/HS_Drive_v2/Image_dataset/labels"#"/cortex/data/images/hyperspectral/HS_Drive_v2/Image_dataset/labels"
+    labels_path = "/cortex/data/images/hyperspectral/HS_Drive_v2/Image_dataset/labels"
         #"/home/dsi/yanivz/data/HS_Drive_v2/Image_dataset/labels"
         #"/media/orange/i_want_to_add_to/Datasets/HS_Drive_v2/Image_dataset/labels"
     
