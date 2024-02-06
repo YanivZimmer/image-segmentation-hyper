@@ -80,19 +80,19 @@ class OutConv(nn.Module):
 
 
 class UNet(nn.Module):
-    def __init__(self, n_channels, n_classes, band_selection=False, bilinear=False):
+    def __init__(self, n_channels,n_target_channels, n_classes, band_selection=False, bilinear=False):
         super(UNet, self).__init__()
         self.band_selection = band_selection
         if band_selection:
             self.ehbs = EHBSFeatureSelector(
-                input_dim=n_channels, sigma=0.5, device="cuda"
+                input_dim=n_channels,target_dim=n_target_channels, sigma=0.5, device="cuda"
             )
 
-        self.n_channels = n_channels
+        self.n_channels = n_target_channels
         self.n_classes = n_classes
         self.bilinear = bilinear
 
-        self.inc = DoubleConv(n_channels, 64)
+        self.inc = DoubleConv(self.n_channels, 64)
         self.down1 = Down(64, 128)
         self.down2 = Down(128, 256)
         self.down3 = Down(256, 512)

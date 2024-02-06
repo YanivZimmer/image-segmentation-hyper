@@ -1,3 +1,4 @@
+import math
 import os
 
 from untils.data_split import DataSplit
@@ -18,18 +19,19 @@ TRAIN_MODEL = True
 EVALUATE = True
 #N_CLASS = 11
 N_CLASS = 3
-
+N_BANDS = 25
+N_TARGET_BANDS = 5
 # LEARNING_RATE = 0.00001 acc 59%
 # LEARNING_RATE = 0.0000025
 # LEARNING_RATE = 0.000005
-LEARNING_RATE = 0.000005
+LEARNING_RATE = 0.00005
 
 
 def main():
     criterion = MixedLoss(0, 2.0, "cuda")
     es = EarlyStopping(patience=2, mode="max")
     # SIZE = 572
-    model = UNet(25, N_CLASS, band_selection=False)
+    model = UNet(25, N_TARGET_BANDS, N_CLASS, band_selection=True)
     ds = DataSplit()
     test, val, train = ds.get_files("./assets")
 
@@ -74,7 +76,13 @@ def main():
     test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=True)
 
     if TRAIN_MODEL:
-        optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+        lr = LEARNING_RATE
+        modified_lr = [
+           {"params": list(model.parameters())[1:], "lr": lr},
+           {"params": list(model.parameters())[:1], "lr": 2 * lr},
+        ]
+        optimizer = torch.optim.Adam(modified_lr, lr=lr)
+        #optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
         scheduler = torch.optim.lr_scheduler.MultiStepLR(
             optimizer, milestones=[3,5,15,35, 55, 105], gamma=0.75
         )
