@@ -64,9 +64,9 @@ class EarlyStopping:
 
 
 def train_one_epoch(
-    train_loader, model, optimizer, loss_fn, accumulation_steps=1, device="cuda"
+    train_loader, model, optimizer, averager, loss_fn,lam = 0.1, accumulation_steps=1, device="cuda"
 ):
-    lam = 1
+     #0.5, 0.25, 0.35
     losses = AverageMeter()
     model = model.to(device)
     model.train()
@@ -83,11 +83,14 @@ def train_one_epoch(
         if model.band_selection:
             regu = lam * model.ehbs.regularizer()
             loss += regu
-        with torch.set_grad_enabled(True):
-            loss.backward()
-            if (b_idx + 1) % accumulation_steps == 0:
-                optimizer.step()
-                optimizer.zero_grad()
+        #with torch.set_grad_enabled(True):
+        if True:
+          loss.backward()
+          if (b_idx + 1) % accumulation_steps == 0:
+            optimizer.step()
+            if averager is not None:
+              averager.step()
+            optimizer.zero_grad()
         losses.update(loss.item(), train_loader.batch_size)
         tk0.set_postfix(loss=losses.avg, learning_rate=optimizer.param_groups[0]["lr"])
     return losses.avg

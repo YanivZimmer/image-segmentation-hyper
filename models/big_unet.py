@@ -5,6 +5,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from models.ehbs import EHBSFeatureSelector
+from models.gumble import FeatureSelectorGumble
+from models.concrete_autoencoder import ConcreteEncoder
+
 
 
 class DoubleConv(nn.Module):
@@ -80,13 +83,14 @@ class OutConv(nn.Module):
 
 
 class UNet(nn.Module):
-    def __init__(self, n_channels,n_target_channels, n_classes, band_selection=False, bilinear=False):
+    def __init__(self, n_channels,n_target_channels, n_classes, band_selection=False, mask=None, bilinear=False):
         super(UNet, self).__init__()
         self.band_selection = band_selection
         if band_selection:
-            self.ehbs = EHBSFeatureSelector(
-                input_dim=n_channels,target_dim=n_target_channels, sigma=0.5, device="cuda"
+            self.ehbs = ConcreteEncoder(
+                input_dim=n_channels,output_dim=n_target_channels,device="cuda"
             )
+        self.mask = mask
 
         self.n_channels = n_target_channels
         self.n_classes = n_classes
@@ -107,6 +111,8 @@ class UNet(nn.Module):
     def forward(self, x):
         if self.band_selection:
             x = self.ehbs(x)
+        elif self.mask is not None:
+            x = x[:, self.mask]
         x1 = self.inc(x)
         x2 = self.down1(x1)
         x3 = self.down2(x2)

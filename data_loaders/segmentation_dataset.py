@@ -74,7 +74,7 @@ class SegmentationDataset(Dataset):
         return data_files[0]
     
     def mask_to_other(self,tensor):
-      preset_dict={0:0,1:1,2:1,3:2,4:2,5:2,6:2,7:2,8:2,9:2,10:2}
+      #preset_dict={0:0,1:1,2:2,3:3,4:3,5:3,6:3,7:3,8:3,9:3,10:3} #0-Unde,1-Road,2-Marks,3-No
       mapped_values = torch.tensor([preset_dict.get(val.item(), 0) for val in tensor.flatten()])
       # Reshape the mapped values tensor to match the original tensor shape
       mapped_tensor = mapped_values.reshape(tensor.shape)
@@ -86,7 +86,9 @@ class SegmentationDataset(Dataset):
         mask_name = os.path.join(self.mask_dir, self.masks[idx])
         img_name = os.path.join(self.image_dir, self.get_data_name(self.masks[idx]))
         mask = self.mask_opener(mask_name)
-        mask = self.mask_to_other(mask)
+        relabel = False
+        if relabel:
+            mask = self.mask_to_other(mask)
         # mask = self.to_tensor(Image.open(mask_name).convert('L'))#.unsqueeze(0)  # L mode for single-channel masks
         if self.mode == "RGB":
             image = self.image_opener(img_name)
