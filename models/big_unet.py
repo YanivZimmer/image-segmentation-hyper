@@ -8,8 +8,59 @@ from models.ehbs import EHBSFeatureSelector
 from models.gumble import FeatureSelectorGumble
 from models.concrete_autoencoder import ConcreteEncoder
 
+class SimpleFCNBS(nn.Module):
+    def __init__(self, n_channels, n_classes,n_target_channels=25,band_selection=True, mask=None):
+        super(SimpleFCNBS, self).__init__()
+        self.band_selection = band_selection
+        if band_selection:
+            self.ehbs = ConcreteEncoder(
+                input_dim=n_channels,output_dim=n_target_channels,device="cuda"
+            )
+        self.mask = mask
+        self.encoder = nn.Sequential(
+            nn.Conv2d(min(n_target_channels, n_channels), 64, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2)  # Downsample by a factor of 2
+        )
 
+        self.decoder = nn.Sequential(
+            nn.ConvTranspose2d(64, 64, kernel_size=2, stride=2),  # Upsample by a factor of 2
+            nn.ReLU(inplace=True),
+            nn.Conv2d(64, n_classes, kernel_size=1)  # Output layer
+        )
 
+        # self.encoder = nn.Sequential(
+        #     nn.Conv2d(min(n_target_channels,n_channels), 64, kernel_size=3, padding=1),
+        #     nn.ReLU(inplace=True),
+        #     nn.Conv2d(64, 128, kernel_size=3, padding=1),
+        #     nn.ReLU(inplace=True),
+        #     nn.MaxPool2d(kernel_size=2, stride=2),  # Downsample by a factor of 2
+        #     nn.Conv2d(128, 256, kernel_size=3, padding=1),
+        #     nn.ReLU(inplace=True),
+        #     nn.MaxPool2d(kernel_size=2, stride=2),  # Downsample by a factor of 2
+        # )
+
+        # self.decoder = nn.Sequential(
+        #     nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2),  # Upsample by a factor of 2
+        #     nn.ReLU(inplace=True),
+        #     nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2),   # Upsample by a factor of 2
+        #     nn.ReLU(inplace=True),
+        #     nn.Conv2d(64, n_classes, kernel_size=1)  # Output layer
+        # )
+
+    def forward(self, x):
+        if self.band_selection:
+            x = self.ehbs(x)
+        elif self.mask is not None:
+            #print(x.shape)
+            x = x[:, self.mask]
+            #print(x.shape)
+
+        x = self.encoder(x)
+        x = self.decoder(x)
+        return x
+
+#model = SimpleFCN(n_channels, n_classes).to("cuda")
 class DoubleConv(nn.Module):
     """(convolution => [BN] => ReLU) * 2"""
 
@@ -90,6 +141,10 @@ class UNet(nn.Module):
             self.ehbs = ConcreteEncoder(
                 input_dim=n_channels,output_dim=n_target_channels,device="cuda"
             )
+            # self.ehbs = EHBSFeatureSelector(#input_dim,target_dim, sigma,
+            #     input_dim=n_channels,target_dim=n_target_channels,sigma=0.5,device="cuda"
+            # )
+
         self.mask = mask
 
         self.n_channels = n_target_channels
