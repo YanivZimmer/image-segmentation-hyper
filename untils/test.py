@@ -1,5 +1,6 @@
 import torch
 from tqdm import tqdm
+from torchmetrics.classification import MulticlassJaccardIndex, MulticlassPrecision, MulticlassRecall,MulticlassAccuracy
 
 from untils.average_meter import AverageMeter
 
@@ -70,7 +71,7 @@ def dice_ignore_label(pred, target, ignore_label=0):
     return dice
 
 
-def evaluate(valid_loader, model, device="cuda", metric=None):  # =dice_metric):
+def evaluate_old(valid_loader, model, device="cuda", metric=None):  # =dice_metric):
     iou_calculator = IouCalculator()
     losses = AverageMeter()
     IoU = AverageMeter()
@@ -93,3 +94,78 @@ def evaluate(valid_loader, model, device="cuda", metric=None):  # =dice_metric):
             # losses.update(dice.mean().item(), valid_loader.batch_size)
             tk0.set_postfix(acc_score=losses.avg, iou_score=IoU.avg)
     return losses.avg, IoU.avg
+
+def evaluate(valid_loader, model,num_classes, device="cuda"):
+    model.eval()
+    tk0 = tqdm(valid_loader, total=len(valid_loader))
+    jaccard = MulticlassJaccardIndex(num_classes=num_classes, average='micro', ignore_index=0).to(device)
+    precision = MulticlassPrecision(num_classes=num_classes, average='micro', ignore_index=0).to(device)
+    recall = MulticlassRecall(num_classes=num_classes, average='micro', ignore_index=0).to(device)
+    accuracy = MulticlassAccuracy(num_classes=num_classes, average='micro', ignore_index=0).to(device)
+
+    jaccard_mean = MulticlassJaccardIndex(num_classes=num_classes,average='macro', ignore_index=0).to(device)
+    precision_mean = MulticlassPrecision(num_classes=num_classes, average='macro', ignore_index=0).to(device)
+    recall_mean = MulticlassRecall(num_classes=num_classes, average='macro', ignore_index=0).to(device)
+    accuracy_mean = MulticlassAccuracy(num_classes=num_classes, average='macro', ignore_index=0).to(device)
+
+    jaccard_weighted = MulticlassJaccardIndex(num_classes=num_classes, average='weighted', ignore_index=0).to(device)
+    precision_weighted = MulticlassPrecision(num_classes=num_classes, average='weighted', ignore_index=0).to(device)
+    recall_weighted = MulticlassRecall(num_classes=num_classes, average='weighted', ignore_index=0).to(device)
+    accuracy_weighted = MulticlassAccuracy(num_classes=num_classes, average='weighted', ignore_index=0).to(device)
+
+    # Accumulate counts of pixels for each class across all batches
+    total_pixels_per_class = torch.zeros(num_classes, device=device)
+    total_num_pixels = 0
+
+    with torch.no_grad():
+        for b_idx, data in enumerate(tk0):
+            for key, value in data.items():
+                data[key] = value.to(device)
+            out = model(data["image"])
+            # Mask out pixels with label 0
+            mask = data["mask"]
+            valid_mask = mask != 0
+            #print("valid_mask1",valid_mask[0])
+            # Flatten tensors
+            out = out.argmax(dim=1).flatten()  # Get the predicted classes
+            mask = mask.flatten()
+            valid_mask = valid_mask.flatten()
+            # Apply the valid mask
+            valid_out = out[valid_mask]
+            valid_mask = mask[valid_mask]
+
+            # Update metrics for the current batch
+            jaccard.update(valid_out, valid_mask)
+            precision.update(valid_out, valid_mask)
+            recall.update(valid_out, valid_mask)
+            accuracy.update(valid_out, valid_mask)
+
+            jaccard_mean.update(valid_out, valid_mask)
+            precision_mean.update(valid_out, valid_mask)
+            recall_mean.update(valid_out, valid_mask)
+            accuracy_mean.update(valid_out, valid_mask)
+
+            jaccard_weighted.update(valid_out, valid_mask)
+            precision_weighted.update(valid_out, valid_mask)
+            recall_weighted.update(valid_out, valid_mask)
+            accuracy_weighted.update(valid_out, valid_mask)
+            
+    # Print results
+    print(f'Overall IoU: {jaccard.compute()*100:.2f}%')
+    print(f'Mean IoU: {jaccard_mean.compute()*100:.2f}%')
+    print(f'Weighted IoU: {jaccard_weighted.compute()*100:.2f}%')
+
+    print(f'Overall Precision: {precision.compute()*100:.2f}%')
+    print(f'Mean Precision: {precision_mean.compute()*100:.2f}%')
+    print(f'Weighted Precision: {precision_weighted.compute()*100:.2f}%')
+
+    print(f'Overall Recall: {recall.compute()*100:.2f}%')
+    print(f'Mean Recall: {recall_mean.compute()*100:.2f}%')
+    print(f'Weighted Recall: {recall_weighted.compute()*100:.2f}%')
+
+    print(f'Overall Accuracy: {accuracy.compute()*100:.2f}%')
+    print(f'Mean Accuracy: {accuracy_mean.compute()*100:.2f}%')
+    print(f'Weighted Accuracy: {accuracy_weighted.compute()*100:.2f}%')
+    return accuracy.compute()*100,jaccard.compute()*100
+
+

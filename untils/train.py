@@ -78,10 +78,11 @@ def train_one_epoch(
             data[key] = value.to(device)
         if accumulation_steps == 1 and b_idx == 0:
             optimizer.zero_grad()
-        out = model(data["image"])
-        loss = loss_fn(out, data["mask"])
+        out = model(data["image"]).to(device)
+        loss = loss_fn(out, data["mask"].to(device))
         if model.band_selection:
             regu = lam * model.ehbs.regularizer()
+            #print(regu,loss)
             loss += regu
         #with torch.set_grad_enabled(True):
         if True:

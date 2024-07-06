@@ -36,6 +36,7 @@ class SegmentationDataset(Dataset):
         self.masks = sorted(os.listdir(mask_dir))
         self.masks = list(self.samples_names.intersection(self.masks))
         self.to_tensor = transforms.ToTensor()
+        self.crop_transform = transforms.CenterCrop(224) 
 
 
     def __len__(self):
@@ -74,7 +75,7 @@ class SegmentationDataset(Dataset):
         return data_files[0]
     
     def mask_to_other(self,tensor):
-      #preset_dict={0:0,1:1,2:2,3:3,4:3,5:3,6:3,7:3,8:3,9:3,10:3} #0-Unde,1-Road,2-Marks,3-No
+      preset_dict={0:0,1:1,2:2,3:3,4:3,5:3,6:3,7:3,8:3,9:3,10:3} #0-Unde,1-Road,2-Marks,3-No
       mapped_values = torch.tensor([preset_dict.get(val.item(), 0) for val in tensor.flatten()])
       # Reshape the mapped values tensor to match the original tensor shape
       mapped_tensor = mapped_values.reshape(tensor.shape)
@@ -86,7 +87,7 @@ class SegmentationDataset(Dataset):
         mask_name = os.path.join(self.mask_dir, self.masks[idx])
         img_name = os.path.join(self.image_dir, self.get_data_name(self.masks[idx]))
         mask = self.mask_opener(mask_name)
-        relabel = False
+        relabel = True
         if relabel:
             mask = self.mask_to_other(mask)
         # mask = self.to_tensor(Image.open(mask_name).convert('L'))#.unsqueeze(0)  # L mode for single-channel masks
@@ -97,5 +98,5 @@ class SegmentationDataset(Dataset):
         if self.transform:
             image = self.transform(image)
             mask = self.transform(mask)
-
-        return {"image": image, "mask": mask}
+        #return {"image": image, "mask": mask}
+        return {"image": self.crop_transform(image), "mask": self.crop_transform(mask)}

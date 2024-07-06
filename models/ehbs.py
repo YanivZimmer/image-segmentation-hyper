@@ -110,7 +110,7 @@ class EHBSFeatureSelector(nn.Module):
         return 0.5 * (1 + torch.erf(x / math.sqrt(2)))
 
     def regularizer(self):
-        return torch.mean(self.regularizer_formula((self.mu + 0.5) / self.sigma))
+        return 0.05*torch.mean(self.regularizer_formula((self.mu + 0.5) / self.sigma))
 
     # def _apply(self, fn):
     #     super(FeatureSelector, self)._apply(fn)
