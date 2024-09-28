@@ -6,7 +6,7 @@ import math
 
 
 class ConcreteEncoder(nn.Module):
-    def __init__(self, input_dim, output_dim,device="cuda", start_temp=8.5, min_temp=0.01, alpha=0.999,headstart_idx=None):
+    def __init__(self, input_dim, output_dim,device="cuda", start_temp=8.5, min_temp=0.001, alpha=0.999,headstart_idx=None):#was 8.5 190924
         print("start_temp, min_temp, alpha",start_temp, min_temp, alpha)#start_temp=0.5, min_temp=0.01, alpha=0.99998):
         super().__init__()
         self.headstart_idx = headstart_idx
@@ -16,7 +16,7 @@ class ConcreteEncoder(nn.Module):
         self.start_temp = start_temp
         self.min_temp = min_temp
         self.alpha = alpha
-        self.noise = 0.5#0.5#0.15#0.15##prev was 0.5
+        self.noise = 0.15#0.5#0.15#0.15##prev was 0.5
         self.temp = start_temp
         #out of input_dim select size of output_dim (emaple 25->1). multiple the 1 hot with the original data
         self.logits = nn.Parameter(torch.empty(output_dim, input_dim))

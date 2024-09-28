@@ -6,12 +6,12 @@ from dog import PolynomialDecayAverager
 from untils.data_split import DataSplit
 import numpy as np
 import matplotlib.pyplot as plt
-np.random.seed(1234567)
+#np.random.seed(1234567)
 import random
-random.seed(7654321)
+#random.seed(123456789)#(7654321)
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:32"
 import torch
-torch.manual_seed(1010101)
+#torch.manual_seed(123456789)#(1010101)
 import torchvision.transforms
 from torch.utils.data import DataLoader
 import statistics
@@ -28,18 +28,31 @@ import sys
 from pathlib import Path
 
 #PATH="weights/checkpoint_bsnet"
-EPOCHS =200#165+101#15#70#15#19
+EPOCHS =90#165+101#15#70#15#19
 TRAIN_MODEL = True
 EVALUATE = True
 N_CLASS = 11
 N_CLASS = 4
 N_BANDS = 25
-#MASK =None#[1,2,3,4,5]#None#[2,7,24,11,1]#None#[11 , 3, 13,  6 , 9]#None#[1,11,16,19,23] #BSNETS [11 , 3, 13,  6 , 9] #SNMF[18,11,3,4,0] #SPABS [2,7,24,11,1]# Gene  [17, 13,  4,  1, 16]
+# [ 3, 11, 15] bsnets [ 3, 11, 15] snmf [ 7, 12, 19]ones [ 7, 14, 19]ones
+# snmf [12, 8, 7, 1, 2, 0]
+#  [ 3 11 15 20  6  9 21 13] bsnets
+#offspring 1 :  [10.0, 16.0, 4.0]
+#Mutated offspring 1 [10.0, 8, 4.0]
+#genetics  [12, 16, 11][0, 19, 15, 11][19, 11, 18, 12, 15] [1, 22, 16, 9, 15, 12] [16, 24, 15, 5, 17, 8, 10, 16] [16, 24, 15, 5, 17, 8, 10, 18]
+#bsnets v3   [11  3 15  6 20 13 21  0]
+#snmf v3 [12, 1, 18, 4, 10, 16, 22]
+#bsnets v4  [ 3 21 11 15  6 20 18 13]
+#snmf v4 [19, 15, 16, 2, 10, 6, 22,22]
+
+#MASK =None#[1,2,3,4,5]#None#[2,7,24,11,1]#None#[11 , 3, 13,  6 , 9]#None#[1,11,16,19,23] #BSNETS [11 , 3, 13,  6 , 9] #SNMF[18,11,3,4,0] #SPABS [2,7,24,11,1]# Gene  [17, 13,  4,  1, 16] [17, 13,  4,  1, 16 ,9,5]
 # we sould get > 0.56 for 7
-#bsnets  [11, 3, 13] snmf [24, 21, 8] spabs [11 ,22, 24] 
-#bsnets [4, 13, 11, 24, 3, 2, 1] 7 snmf [5, 1, 16, 22, 8, 11, 4] spabs [4, 13, 11, 24, 3, 2, 1]
+#bsnets  [11, 3, 13] snmf [24, 21, 8] spabs [11 ,22, 24]
+#bsnets [4, 13, 11, 24, 3, 2, 1] 7 snmf [5, 1, 16, 22, 8, 11, 4] spabs [4, 13, 11, 24, 3, 2, 1] Gene [17, 13,  4,  1, 16 ,9,5]
 #snmf [5, 1, 16, 22,23,24, 8, 11, 4] spabs [4, 13, 11, 24, 3, 2, 1,22,20]
-MASK = None#[11, 3, 13]#[4, 13, 11, 24, 3]#[ 1,  6, 20,  7, 13]#[11 , 3, 13]#[11, 19, 6, 20, 9]#[11, 19, 6, 20, 9]#[10, 11, 13, 15, 19, 24]  #bsnets[11, 19, 6, 20, 9, 15] #ehbs[10, 11, 13, 15, 19, 24]
+#MASK =[18,11,3,4,0]#, 2, 1]#[4, 13, 11, 24, 3, 2, 1,1]# 22]#[16, 24, 15, 5, 17, 8, 10, 18]#[12, 1, 18, 4]#[ 3, 21, 11]#[ 7, 13, 19]#[ 3 ,21 ,11]
+MASK=[5, 1, 16, 22,23,24, 8, 11]#,[5, 1, 16, 22, 8, 11]
+#[17, 13,  4,  1, 16]#[18,11,3]# [11, 19, 6]#[11, 3, 13]#[4, 13, 11, 24, 3]#[ 1,  6, 20,  7, 13]#[11 , 3, 13]#[11, 19, 6, 20, 9]#[11, 19, 6, 20, 9]#[10, 11, 13, 15, 19, 24]  #bsnets[11, 19, 6, 20, 9, 15] #ehbs[10, 11, 13, 15, 19, 24]
 #[11 , 9 , 6]
 #[1, 5, 10, 13, 17, 20]#... #[16, 3, 0, 6, 18, 8]
 # [11  ,9 , 6 , 7  ,5 ,15]
@@ -48,15 +61,16 @@ MASK = None#[11, 3, 13]#[4, 13, 11, 24, 3]#[ 1,  6, 20,  7, 13]#[11 , 3, 13]#[11
 #[24, 21, 8] #[5, 1, 16, 22, 8, 11, 4]#[11 , 3, 13,  6 , 9]#[11 , 3, 13,  6 , 9]# [11 , 3, 13,  6 , 9]#[11, 3, 13, 7, 6, 9, 19, 8, 12] #[5, 1, 16, 22,23,24, 8, 11, 4]#[2,7,24,11,1]#[20, 18, 10,  8,  1]#[22, 20, 13, 11,  8,  1,  0][23, 20, 16, 13, 10,  8,  4,  1,  0]
 #[4, 13, 11, 24, 3, 2, 1]  
 #[2,7,24,11,1]#[4, 13, 11, 24, 3, 2, 1]#[11, 3, 13, 7, 6, 9, 19, 8, 12, 4]#    [11, 22, 24]
-#[4, 13, 11, 24, 3, 2, 1]
-TYPE=("experimental_gumbelones_3_class")#gumbelones"#"seedv2_gumbel_85_0999"#high_ones-noise05_65+101epc_tmp1.5alpha0.999"
+#[4, 13, 11, 24, 3, 2, 1]# [3, 21, 11, 15, 6, 20, 18, 13] bsnetsv4 
+TYPE="ant5e-4_gumbel_90epc_"#("gumbelonesv5-real15noisev23")#gumbelones"#"seedv2_gumbel_85_0999"#high_ones-noise05_65+101epc_tmp1.5alpha0.999"experimental_gumbelnormal
+TYPE="boi5e-4_snmf_"
 #None#[11, 3, 13, 7, 6, 9, 19]
 # [11, 3, 13, 7, 6, 9, 19]#None#[  8 ,24, 11,  7,  5 , 4  ,3 , 6,  2,  1]  # [5, 1, 16, 22, 8, 11, 4]
 #4
 #snmf [19, 10, 21, 8] [21, 15] bs  [11 19  9  6] [11 19  6 20]
 
 #MASK=range(N_BANDS)
-#TYPE="all"
+#TYPE="all_3classlowlr"
 
 print("MASK",MASK)
 N_TARGET_BANDS = len(MASK) if MASK is not None else int(sys.argv[1])
@@ -68,11 +82,11 @@ LEARNING_RATE = 0.00005 # 3 labels
 #LEARNING_RATE = 0.0001 best for all labels and 60 epc
 
 #LEARNING_RATE = 0.0001 #best for all labels and 70 epc
-LEARNING_RATE= 0.0001
-LEARNING_RATE=  0.005#0.001
+#LEARNING_RATE= 0.0001
+#LEARNING_RATE=  0.005#1507 change#0.001#0.005#0.005#0.001
 BAND_SELECTION = True if MASK is None else False
-
-
+LEARNING_RATE = 0.0005 # 3 labels
+LEARNING_RATE = 0.0005 # 3 labels
 
 print("MASK ", MASK, TYPE, "N_TARGET_BANDS",N_TARGET_BANDS,"BAND_SELECTION",BAND_SELECTION)
 
@@ -83,7 +97,6 @@ def plot_val_score(validation_scores,bands,metric="oa",step_size=10):
         # Assuming you have a list of validation scores and corresponding epochs
         epochs = list(range(0, len(validation_scores)*10, 10))
         print(epochs)
-
         # Create the plot
         plt.figure(figsize=(10, 6))
         plt.plot(epochs, validation_scores, marker='o', linestyle='-', color='b')
@@ -93,9 +106,9 @@ def plot_val_score(validation_scores,bands,metric="oa",step_size=10):
         plt.grid(True)
         #plt.yticks(range(5, 100, 5))
         # Save the plot
-        plt.savefig(f'plots/{TYPE}-{N_TARGET_BANDS}-{metric}-validation_scores_plot-{uuid.uuid4().hex}.png')
+        plt.savefig(f'plots/{N_CLASS}/{TYPE}-{N_TARGET_BANDS}-{metric}-validation_scores_plot-{uuid.uuid4().hex}.png')
     except Exception as e:
-        with open(f'plots/{TYPE}-{N_TARGET_BANDS}-{metric}-validation_scores_plot-{uuid.uuid4().hex}.txt','w') as f:
+        with open(f'plots/{N_CLASS}-{TYPE}-{N_TARGET_BANDS}-{metric}-validation_scores_plot-{uuid.uuid4().hex}.txt','w') as f:
             f.write(f"{validation_scores}")
 
 def save_checkpoint(model, model_path):
@@ -228,6 +241,7 @@ def main(lr,lr_factor):
   #      model.load_state_dict(model_state_dict)
         checkpoint_file=f"weights/unet-{N_TARGET_BANDS}-{TYPE}"
         for epoch in range(EPOCHS):
+            #print("temp=",model.ehbs.temp)
             #if epoch ==80:
             #  torch.save(model.state_dict(), PATH)
             #  break
@@ -245,14 +259,20 @@ def main(lr,lr_factor):
             # train_acc, train_iou = evaluate(train_dataloader, model, metric=metric)
             #selected_mask = torch.argmax(torch.from_numpy(model.ehbs.get_gates("raw")[0]),dim=1)
             print(selected_mask)
-            if epoch % 10 ==0:
-                val_acc, val_iou = evaluate_old(val_dataloader, model, metric=metric)
-                _ = evaluate(val_test_dataloader, model,N_CLASS)  # metric=metric)
-                if len(val_accs)==0 or val_accs[-1]<val_acc:
-                    print(f"oa improved. {val_acc}")
+            if epoch % 10 == 0:
+                #val_acc, val_iou = evaluate_old(val_dataloader, model, metric=metric)
+                val_acc, val_iou = evaluate(val_test_dataloader, model,N_CLASS)  # metric=metric)
+                # if len(val_accs)==0 or val_accs[-1]<val_acc:
+                #     print(f"oa improved. {val_acc}")
+                #     save_checkpoint(model,model_path=checkpoint_file)
+                # else:
+                #     print(f"oa not improved! {val_acc} prev was {val_accs[-1]}")
+                if len(val_ious)==0 or val_ious[-1]<val_iou:
+                    print(f"iou improved. {val_iou}")
                     save_checkpoint(model,model_path=checkpoint_file)
                 else:
-                    print(f"oa not improved! {val_acc} prev was {val_accs[-1]}")
+                    print(f"iou not improved! {val_iou} prev was {val_ious[-1]}")
+                    #break
                 val_accs.append(val_acc.item())
                 val_ious.append(val_iou.item())
             #if epoch == EPOCHS-165 and model.band_selection:
@@ -278,11 +298,19 @@ def main(lr,lr_factor):
         plot_val_score(val_accs,selected_mask)
         plot_val_score(val_ious,selected_mask,"iou")
     if EVALUATE:
+        output_test_file=f"metrics/{N_CLASS}_class/{N_TARGET_BANDS}/unet-test-{TYPE}-{N_TARGET_BANDS}-{N_CLASS}classes-{uuid.uuid4().hex[:6]}.txt"
+        if not os.path.exists(f"metrics/{N_CLASS}_class/"):
+            os.mkdir(f"metrics/{N_CLASS}_class/")
+        if not os.path.exists(f"metrics/{N_CLASS}_class/{N_TARGET_BANDS}/"):
+            os.mkdir(f"metrics/{N_CLASS}_class/{N_TARGET_BANDS}/")
         model.load_state_dict(torch.load(checkpoint_file))
         model.train(mode=False)
         test_val_score = evaluate(val_test_dataloader,model,N_CLASS)# metric=metric)
         train_score = evaluate(train_dataloader,model, N_CLASS)#metric=metric)
-        test_score = evaluate(test_dataloader,model, N_CLASS)#metric=metric)
+        test_score = evaluate(test_dataloader,model, N_CLASS,output_test_file)#metric=metric)
+        if selected_mask is not None:
+            with open(f"{output_test_file}_bands",'w') as f:
+                f.write(f"{selected_mask}")
         print(f"Test score: {test_score}")
         return test_score,val_acc, val_iou,train_score
 
@@ -340,7 +368,7 @@ if __name__ == "__main__":
             print("val IOU of all" ,ious_val,  "mean",statistics.fmean(ious_val),"std", statistics.stdev(ious_val))
             print("train OA of all" ,accs_train, "mean",statistics.fmean(accs_train), "std", statistics.stdev(accs_train))
             print("train IOU of all" ,ious_train,  "mean",statistics.fmean(ious_train),"std", statistics.stdev(ious_train))
-    with open(f"logs/unetv0-{N_TARGET_BANDS}-{TYPE}-{uuid.uuid4().hex}.txt", 'w') as f:
+    with open(f"logs/unetv0-{N_TARGET_BANDS}-{TYPE}-{uuid.uuid4().hex[:6]}.txt", 'w') as f:
         f.writelines([
             f"MASK {str(MASK)} N_TARGET_BANDS {N_TARGET_BANDS} BAND_SELECTION {BAND_SELECTION}\n"
             f" LEARNING_RATE {LEARNING_RATE} OA of all {accs}\n"

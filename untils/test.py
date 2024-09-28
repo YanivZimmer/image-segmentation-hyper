@@ -1,7 +1,7 @@
 import torch
 from tqdm import tqdm
 from torchmetrics.classification import MulticlassJaccardIndex, MulticlassPrecision, MulticlassRecall,MulticlassAccuracy
-
+from contextlib import redirect_stdout
 from untils.average_meter import AverageMeter
 
 # from Losses import ComboLoss, dice_metric
@@ -95,7 +95,7 @@ def evaluate_old(valid_loader, model, device="cuda", metric=None):  # =dice_metr
             tk0.set_postfix(acc_score=losses.avg, iou_score=IoU.avg)
     return losses.avg, IoU.avg
 
-def evaluate(valid_loader, model,num_classes, device="cuda"):
+def evaluate(valid_loader, model,num_classes, output_file=None, device="cuda"):
     model.eval()
     tk0 = tqdm(valid_loader, total=len(valid_loader))
     jaccard = MulticlassJaccardIndex(num_classes=num_classes, average='micro', ignore_index=0).to(device)
@@ -166,6 +166,26 @@ def evaluate(valid_loader, model,num_classes, device="cuda"):
     print(f'Overall Accuracy: {accuracy.compute()*100:.2f}%')
     print(f'Mean Accuracy: {accuracy_mean.compute()*100:.2f}%')
     print(f'Weighted Accuracy: {accuracy_weighted.compute()*100:.2f}%')
-    return accuracy.compute()*100,jaccard.compute()*100
+
+    if output_file is not None:
+        with open(output_file,'w') as f:
+            with redirect_stdout(f):
+                print(f'Overall IoU: {jaccard.compute() * 100:.2f}%')
+                print(f'Mean IoU: {jaccard_mean.compute() * 100:.2f}%')
+                print(f'Weighted IoU: {jaccard_weighted.compute() * 100:.2f}%')
+
+                print(f'Overall Precision: {precision.compute() * 100:.2f}%')
+                print(f'Mean Precision: {precision_mean.compute() * 100:.2f}%')
+                print(f'Weighted Precision: {precision_weighted.compute() * 100:.2f}%')
+
+                print(f'Overall Recall: {recall.compute() * 100:.2f}%')
+                print(f'Mean Recall: {recall_mean.compute() * 100:.2f}%')
+                print(f'Weighted Recall: {recall_weighted.compute() * 100:.2f}%')
+
+                print(f'Overall Accuracy: {accuracy.compute() * 100:.2f}%')
+                print(f'Mean Accuracy: {accuracy_mean.compute() * 100:.2f}%')
+                print(f'Weighted Accuracy: {accuracy_weighted.compute() * 100:.2f}%')
+
+    return accuracy.compute(),jaccard_mean.compute()
 
 
